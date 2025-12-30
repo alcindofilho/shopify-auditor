@@ -1,135 +1,40 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
 import google.generativeai as genai
 
-# 1. Page Config
-st.set_page_config(page_title="Shopify Store Auditor", layout="centered")
+st.set_page_config(page_title="API Connection Tester")
 
-# 2. Load API Key from Secrets
+st.title("🔌 API Connection Tester")
+
+# 1. Load Key
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
+    st.success(f"✅ Key found: {api_key[:5]}... (hidden)")
     genai.configure(api_key=api_key)
-except FileNotFoundError:
-    st.error("Secrets file not found. Please add your GEMINI_API_KEY to Streamlit Secrets.")
-    st.stop()
 except Exception as e:
-    st.error(f"Error configuring API: {e}")
+    st.error(f"❌ Key loading failed: {e}")
     st.stop()
 
-# 3. The Scraper Function (Unchanged)
-def scrape_shopify_store(url):
-    try:
-        # Add a user agent
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        
-        if not url.startswith('http'):
-            url = 'https://' + url
-            
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        if response.status_code != 200:
-            return None, "Failed to load website. It might be password protected."
-            
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        title = soup.title.string if soup.title else "No Title"
-        meta_desc = soup.find('meta', attrs={'name': 'description'})
-        description = meta_desc['content'] if meta_desc else "No Meta Description found"
-        
-        headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
-        body_text = soup.get_text(separator=' ', strip=True)[:3000]
-        
-        return {
-            "title": title,
-            "description": description,
-            "headings": headings[:10],
-            "body": body_text
-        }, None
-        
-    except Exception as e:
-        return None, str(e)
+# 2. Test Listing Models
+st.write("Testing connection to Google...")
 
-# 4. The AI Analysis Function (Robust Version)
-def analyze_store(data):
-    # List of models to try in order of preference (Fastest -> Most Stable)
-    model_options = [
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-flash-001',
-        'gemini-1.5-pro',
-        'gemini-pro'  # The universal fallback
-    ]
+try:
+    # This asks Google: "What models am I allowed to use?"
+    models = list(genai.list_models())
     
-    # Try each model until one works
-    for model_name in model_options:
-        try:
-            model = genai.GenerativeModel(model_name)
+    st.success("✅ Connection Successful! Here are your available models:")
+    
+    # Print the model names nicely
+    valid_models = []
+    for m in models:
+        if 'generateContent' in m.supported_generation_methods:
+            valid_models.append(m.name)
+            st.code(m.name)
             
-            prompt = f"""
-            You are a specialized Shopify Store Consultant.
-            Analyze the scraped data below to provide a strategic audit.
-            
-            Data:
-            - Title: {data['title']}
-            - Meta Description: {data['description']}
-            - Main Headings: {data['headings']}
-            - Page Content Snippet: {data['body'][:2000]}
-
-            **Your Goal:** Identify gaps in Persuasion, SEO, and Trust, and recommend specific Shopify Ecosystem tools to fix them.
-
-            Output a report in Markdown format with these exact sections:
-
-            ### 1. 🚦 First Impression Score (1-10)
-            *Give a score and a 1-sentence reason why.*
-
-            ### 2. 🧠 Persuasion & Messaging
-            *Analyze the "Hook" (First headline) and the "Value Prop". Are they clear? Do they solve a problem?*
-
-            ### 3. 🔍 SEO Health Check
-            *Critique the Title Tag and Meta Description. Are they keyword-rich?*
-
-            ### 4. ✅ The Good (Pros)
-            *Bullet points of 3 things they are doing well.*
-
-            ### 5. ❌ The Bad (Cons)
-            *Bullet points of 3 things hurting conversion.*
-
-            ### 6. 🚀 3 Quick Wins (with App Recommendations)
-            *Suggest 3 specific actionable changes. For every problem, suggest a specific Shopify App solution.*
-
-            **Tone:** Professional, encouraging, but brutally honest about the flaws.
-            """
-            
-            response = model.generate_content(prompt)
-            return response.text
-
-        except Exception as e:
-            # If this model fails, continue to the next one in the list
-            continue
-
-    # If ALL models fail, return the error
-    return "Error: Could not connect to any Google Gemini models. Please check your API Key permissions."
-
-
-
-# 5. The UI Layout
-st.title("🛍️ AI Shopify Store Audit (Powered by Gemini)")
-st.write("Get a free 1-minute critique of your store's persuasion, SEO, and branding.")
-
-url_input = st.text_input("Enter your Shopify Store URL (e.g., mystore.com)")
-
-if st.button("Audit My Store"):
-    if not url_input:
-        st.warning("Please enter a URL.")
-    else:
-        with st.spinner("Scanning store..."):
-            data, error = scrape_shopify_store(url_input)
-            
-            if error:
-                st.error(f"Error: {error}")
-            else:
-                st.success("Scan complete! Gemini is analyzing strategy...")
-                report = analyze_store(data)
-                st.markdown("---")
-                st.markdown(report)
+    if not valid_models:
+        st.warning("⚠️ Connection worked, but no text-generation models were found. This is a region/permissions issue.")
+        
+except Exception as e:
+    st.error("❌ Connection Failed.")
+    st.error(f"Error Message: {e}")
+    st.info("If the error says '403' or 'Permission Denied', your API key is invalid.")
+    st.info("If the error says '400' or 'User location is not supported', you are in a blocked country (EU/UK).")
