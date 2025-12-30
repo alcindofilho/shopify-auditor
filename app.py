@@ -1,23 +1,28 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+import google.generativeai as genai
 
 # 1. Page Config
 st.set_page_config(page_title="Shopify Store Auditor", layout="centered")
 
-# 2. Sidebar for API Key (or you can use Secrets for your own site)
-st.sidebar.title("Configuration")
-api_key = st.sidebar.text_input("Enter OpenAI API Key", type="password")
-# Note: For your public tool, you will store your API key in Streamlit Secrets, not ask the user.
+# 2. Load API Key from Secrets
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=api_key)
+except FileNotFoundError:
+    st.error("Secrets file not found. Please add your GEMINI_API_KEY to Streamlit Secrets.")
+    st.stop()
+except Exception as e:
+    st.error(f"Error configuring API: {e}")
+    st.stop()
 
-# 3. The Scraper Function
+# 3. The Scraper Function (Unchanged)
 def scrape_shopify_store(url):
     try:
-        # Add a user agent so the site knows we are a bot/browser
+        # Add a user agent
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         
-        # Ensure URL has schema
         if not url.startswith('http'):
             url = 'https://' + url
             
@@ -28,79 +33,91 @@ def scrape_shopify_store(url):
             
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Extract meaningful content
         title = soup.title.string if soup.title else "No Title"
         meta_desc = soup.find('meta', attrs={'name': 'description'})
         description = meta_desc['content'] if meta_desc else "No Meta Description found"
         
-        # Get all headings to understand structure
         headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
-        
-        # Get first 1000 words of body text
         body_text = soup.get_text(separator=' ', strip=True)[:3000]
         
         return {
             "title": title,
             "description": description,
-            "headings": headings[:10], # Just the top 10 headings
+            "headings": headings[:10],
             "body": body_text
         }, None
         
     except Exception as e:
         return None, str(e)
 
-# 4. The AI Analysis Function
-def analyze_store(data, api_key):
-    client = OpenAI(api_key=api_key)
+# 4. The AI Analysis Function (Updated for Specific App Recommendations)
+def analyze_store(data):
+    # We use 'gemini-1.5-flash' because it is fast and cheap/free
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
-    You are a world-class CRO (Conversion Rate Optimization) and Brand Strategist.
-    Analyze the following scraped data from a Shopify store's landing page.
+    You are a specialized Shopify Store Consultant.
+    Analyze the scraped data below to provide a strategic audit.
     
     Data:
     - Title: {data['title']}
     - Meta Description: {data['description']}
     - Main Headings: {data['headings']}
-    - Page Content Snippet: {data['body'][:1500]}
+    - Page Content Snippet: {data['body'][:2000]}
 
-    Output a strict report in Markdown format with these sections:
-    1. **First Impression Score (1-10)**: Be honest.
-    2. **Persuasion & Messaging**: Analyze the hook and value proposition.
-    3. **SEO Check**: Critique the title and meta description.
-    4. **Pros**: 3 things they are doing well.
-    5. **Cons**: 3 things hurting their conversion.
-    6. **3 Quick Wins**: Specific, actionable changes they can make in 1 hour.
-    
-    Tone: Professional, direct, and empathetic.
+    **Your Goal:** Identify gaps in Persuasion, SEO, and Trust, and recommend specific Shopify Ecosystem tools to fix them.
+
+    Output a report in Markdown format with these exact sections:
+
+    ### 1. 🚦 First Impression Score (1-10)
+    *Give a score and a 1-sentence reason why.*
+
+    ### 2. 🧠 Persuasion & Messaging
+    *Analyze the "Hook" (First headline) and the "Value Prop". Are they clear? Do they solve a problem?*
+
+    ### 3. 🔍 SEO Health Check
+    *Critique the Title Tag and Meta Description. Are they keyword-rich?*
+
+    ### 4. ✅ The Good (Pros)
+    *Bullet points of 3 things they are doing well.*
+
+    ### 5. ❌ The Bad (Cons)
+    *Bullet points of 3 things hurting conversion (e.g., missing social proof, slow loading feel, unclear CTA).*
+
+    ### 6. 🚀 3 Quick Wins (with App Recommendations)
+    *Suggest 3 specific actionable changes. For every problem, suggest a specific Shopify App solution.*
+    * **If Social Proof is missing:** Suggest apps like *Judge.me*, *Loox*, or *Yotpo*.
+    * **If Email capture is missing:** Suggest apps like *Klaviyo* or *Privy*.
+    * **If Urgency/Upsell is needed:** Suggest apps like *ReConvert* or *Frequently Bought Together*.
+    * **If Page design is poor:** Suggest page builders like *PageFly* or *Shogun*.
+
+    **Tone:** Professional, encouraging, but brutally honest about the flaws.
     """
     
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "system", "content": "You are a helpful expert audit tool."},
-                  {"role": "user", "content": prompt}],
-        temperature=0.7
-    )
-    return response.choices[0].message.content
+    response = model.generate_content(prompt)
+    return response.text
+
+report = report.replace("Loox", "[Loox](https://loox.io/your-link)")
+return report
+
 
 # 5. The UI Layout
-st.title("🛍️ AI Shopify Store Audit")
+st.title("🛍️ AI Shopify Store Audit (Powered by Gemini)")
 st.write("Get a free 1-minute critique of your store's persuasion, SEO, and branding.")
 
 url_input = st.text_input("Enter your Shopify Store URL (e.g., mystore.com)")
 
 if st.button("Audit My Store"):
-    if not api_key:
-        st.error("Please provide an API Key.")
-    elif not url_input:
+    if not url_input:
         st.warning("Please enter a URL.")
     else:
-        with st.spinner("Scanning store... (This takes about 5 seconds)"):
+        with st.spinner("Scanning store..."):
             data, error = scrape_shopify_store(url_input)
             
             if error:
                 st.error(f"Error: {error}")
             else:
-                st.success("Scan complete! Analyzing persuasion and strategy...")
-                report = analyze_store(data, api_key)
+                st.success("Scan complete! Gemini is analyzing strategy...")
+                report = analyze_store(data)
                 st.markdown("---")
                 st.markdown(report)
