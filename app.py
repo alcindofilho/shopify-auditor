@@ -50,52 +50,58 @@ def scrape_shopify_store(url):
     except Exception as e:
         return None, str(e)
 
-# 4. The AI Analysis Function (Updated for Specific App Recommendations)
+# 4. The AI Analysis Function (Updated with Error Handling)
 def analyze_store(data):
-    # We use 'gemini-1.5-flash' because it is fast and cheap/free
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Try the Flash model first (Fast & Cheap)
+    model_name = 'gemini-1.5-flash'
     
-    prompt = f"""
-    You are a specialized Shopify Store Consultant.
-    Analyze the scraped data below to provide a strategic audit.
-    
-    Data:
-    - Title: {data['title']}
-    - Meta Description: {data['description']}
-    - Main Headings: {data['headings']}
-    - Page Content Snippet: {data['body'][:2000]}
+    try:
+        model = genai.GenerativeModel(model_name)
+        
+        prompt = f"""
+        You are a specialized Shopify Store Consultant.
+        Analyze the scraped data below to provide a strategic audit.
+        
+        Data:
+        - Title: {data['title']}
+        - Meta Description: {data['description']}
+        - Main Headings: {data['headings']}
+        - Page Content Snippet: {data['body'][:2000]}
 
-    **Your Goal:** Identify gaps in Persuasion, SEO, and Trust, and recommend specific Shopify Ecosystem tools to fix them.
+        **Your Goal:** Identify gaps in Persuasion, SEO, and Trust, and recommend specific Shopify Ecosystem tools to fix them.
 
-    Output a report in Markdown format with these exact sections:
+        Output a report in Markdown format with these exact sections:
 
-    ### 1. 🚦 First Impression Score (1-10)
-    *Give a score and a 1-sentence reason why.*
+        ### 1. 🚦 First Impression Score (1-10)
+        *Give a score and a 1-sentence reason why.*
 
-    ### 2. 🧠 Persuasion & Messaging
-    *Analyze the "Hook" (First headline) and the "Value Prop". Are they clear? Do they solve a problem?*
+        ### 2. 🧠 Persuasion & Messaging
+        *Analyze the "Hook" (First headline) and the "Value Prop". Are they clear? Do they solve a problem?*
 
-    ### 3. 🔍 SEO Health Check
-    *Critique the Title Tag and Meta Description. Are they keyword-rich?*
+        ### 3. 🔍 SEO Health Check
+        *Critique the Title Tag and Meta Description. Are they keyword-rich?*
 
-    ### 4. ✅ The Good (Pros)
-    *Bullet points of 3 things they are doing well.*
+        ### 4. ✅ The Good (Pros)
+        *Bullet points of 3 things they are doing well.*
 
-    ### 5. ❌ The Bad (Cons)
-    *Bullet points of 3 things hurting conversion (e.g., missing social proof, slow loading feel, unclear CTA).*
+        ### 5. ❌ The Bad (Cons)
+        *Bullet points of 3 things hurting conversion.*
 
-    ### 6. 🚀 3 Quick Wins (with App Recommendations)
-    *Suggest 3 specific actionable changes. For every problem, suggest a specific Shopify App solution.*
-    * **If Social Proof is missing:** Suggest apps like *Judge.me*, *Loox*, or *Yotpo*.
-    * **If Email capture is missing:** Suggest apps like *Klaviyo* or *Privy*.
-    * **If Urgency/Upsell is needed:** Suggest apps like *ReConvert* or *Frequently Bought Together*.
-    * **If Page design is poor:** Suggest page builders like *PageFly* or *Shogun*.
+        ### 6. 🚀 3 Quick Wins (with App Recommendations)
+        *Suggest 3 specific actionable changes. For every problem, suggest a specific Shopify App solution.*
 
-    **Tone:** Professional, encouraging, but brutally honest about the flaws.
-    """
-    
-    response = model.generate_content(prompt)
-    return response.text
+        **Tone:** Professional, encouraging, but brutally honest about the flaws.
+        """
+        
+        response = model.generate_content(prompt)
+        return response.text
+
+    except Exception as e:
+        # If Flash fails, print the error in the app so we can see it, 
+        # and try the older stable model 'gemini-pro'
+        return f"Error with main model: {str(e)}. \n\n Please try refreshing the page."
+
+
 
 # 5. The UI Layout
 st.title("🛍️ AI Shopify Store Audit (Powered by Gemini)")
