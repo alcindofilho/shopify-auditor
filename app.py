@@ -50,56 +50,66 @@ def scrape_shopify_store(url):
     except Exception as e:
         return None, str(e)
 
-# 4. The AI Analysis Function (Updated with Error Handling)
+# 4. The AI Analysis Function (Robust Version)
 def analyze_store(data):
-    # Try the Flash model first (Fast & Cheap)
-    model_name = 'gemini-1.5-flash'
+    # List of models to try in order of preference (Fastest -> Most Stable)
+    model_options = [
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash-001',
+        'gemini-1.5-pro',
+        'gemini-pro'  # The universal fallback
+    ]
     
-    try:
-        model = genai.GenerativeModel(model_name)
-        
-        prompt = f"""
-        You are a specialized Shopify Store Consultant.
-        Analyze the scraped data below to provide a strategic audit.
-        
-        Data:
-        - Title: {data['title']}
-        - Meta Description: {data['description']}
-        - Main Headings: {data['headings']}
-        - Page Content Snippet: {data['body'][:2000]}
+    # Try each model until one works
+    for model_name in model_options:
+        try:
+            model = genai.GenerativeModel(model_name)
+            
+            prompt = f"""
+            You are a specialized Shopify Store Consultant.
+            Analyze the scraped data below to provide a strategic audit.
+            
+            Data:
+            - Title: {data['title']}
+            - Meta Description: {data['description']}
+            - Main Headings: {data['headings']}
+            - Page Content Snippet: {data['body'][:2000]}
 
-        **Your Goal:** Identify gaps in Persuasion, SEO, and Trust, and recommend specific Shopify Ecosystem tools to fix them.
+            **Your Goal:** Identify gaps in Persuasion, SEO, and Trust, and recommend specific Shopify Ecosystem tools to fix them.
 
-        Output a report in Markdown format with these exact sections:
+            Output a report in Markdown format with these exact sections:
 
-        ### 1. 🚦 First Impression Score (1-10)
-        *Give a score and a 1-sentence reason why.*
+            ### 1. 🚦 First Impression Score (1-10)
+            *Give a score and a 1-sentence reason why.*
 
-        ### 2. 🧠 Persuasion & Messaging
-        *Analyze the "Hook" (First headline) and the "Value Prop". Are they clear? Do they solve a problem?*
+            ### 2. 🧠 Persuasion & Messaging
+            *Analyze the "Hook" (First headline) and the "Value Prop". Are they clear? Do they solve a problem?*
 
-        ### 3. 🔍 SEO Health Check
-        *Critique the Title Tag and Meta Description. Are they keyword-rich?*
+            ### 3. 🔍 SEO Health Check
+            *Critique the Title Tag and Meta Description. Are they keyword-rich?*
 
-        ### 4. ✅ The Good (Pros)
-        *Bullet points of 3 things they are doing well.*
+            ### 4. ✅ The Good (Pros)
+            *Bullet points of 3 things they are doing well.*
 
-        ### 5. ❌ The Bad (Cons)
-        *Bullet points of 3 things hurting conversion.*
+            ### 5. ❌ The Bad (Cons)
+            *Bullet points of 3 things hurting conversion.*
 
-        ### 6. 🚀 3 Quick Wins (with App Recommendations)
-        *Suggest 3 specific actionable changes. For every problem, suggest a specific Shopify App solution.*
+            ### 6. 🚀 3 Quick Wins (with App Recommendations)
+            *Suggest 3 specific actionable changes. For every problem, suggest a specific Shopify App solution.*
 
-        **Tone:** Professional, encouraging, but brutally honest about the flaws.
-        """
-        
-        response = model.generate_content(prompt)
-        return response.text
+            **Tone:** Professional, encouraging, but brutally honest about the flaws.
+            """
+            
+            response = model.generate_content(prompt)
+            return response.text
 
-    except Exception as e:
-        # If Flash fails, print the error in the app so we can see it, 
-        # and try the older stable model 'gemini-pro'
-        return f"Error with main model: {str(e)}. \n\n Please try refreshing the page."
+        except Exception as e:
+            # If this model fails, continue to the next one in the list
+            continue
+
+    # If ALL models fail, return the error
+    return "Error: Could not connect to any Google Gemini models. Please check your API Key permissions."
 
 
 
