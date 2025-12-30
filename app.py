@@ -97,10 +97,6 @@ def analyze_store(data):
     response = model.generate_content(prompt)
     return response.text
 
-report = report.replace("Loox", "[Loox](https://loox.io/your-link)")
-return report
-
-
 # 5. The UI Layout
 st.title("🛍️ AI Shopify Store Audit (Powered by Gemini)")
 st.write("Get a free 1-minute critique of your store's persuasion, SEO, and branding.")
