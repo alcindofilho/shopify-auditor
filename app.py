@@ -4,18 +4,17 @@ from bs4 import BeautifulSoup
 import google.generativeai as genai
 import json
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
+from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import io
 import datetime
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="Coffee Store Strategist", page_icon="☕", layout="centered")
+st.set_page_config(page_title="Coffee SEO Strategist", page_icon="☕", layout="centered")
 
-# Custom CSS for a Premium Coffee Consultant Look
+# Custom CSS for the Coffee SEO Consultant Look
 st.markdown("""
 <style>
-    /* Main Background and Font */
     .report-container {
         background-color: #ffffff;
         padding: 40px;
@@ -25,30 +24,27 @@ st.markdown("""
         color: #333;
     }
     
-    /* Headers */
     h1 { color: #2c1a12; font-family: 'Georgia', serif; font-weight: bold; }
     h2 { color: #4a3b32; font-family: 'Georgia', serif; }
-    h3 { color: #6f4e37; }
     
-    /* Button Styling (Coffee Bean Color) */
+    /* Button Styling */
     .stButton>button { 
         width: 100%; 
-        background-color: #6f4e37; 
+        background-color: #008060; /* Shopify Green for Growth */
         color: white; 
         font-weight: bold; 
         border: none;
         padding: 12px;
     }
     .stButton>button:hover {
-        background-color: #5d4030;
-        color: white;
+        background-color: #004c3f;
     }
     
     /* Success Message */
     .stSuccess {
-        background-color: #f6f3f0;
-        border: 1px solid #d7ccc8;
-        color: #4e342e;
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -88,71 +84,70 @@ def scrape_shopify_store(url):
             "url": url,
             "title": title,
             "description": desc,
-            "headings": headings[:10],
+            "headings": headings[:15], # Increased headings to see more structure
             "body": body
         }, None
     except Exception as e:
         return None, f"Scraping Error: {str(e)}"
 
 def analyze_store_json(data):
-    """Generates a Coffee-Specific Strategy Report using Gemini."""
+    """Generates a Coffee SEO & SEM Strategy Report using Gemini."""
     model = genai.GenerativeModel('models/gemini-2.5-flash')
     
     prompt = f"""
-    You are a Senior Business Consultant specializing in the Coffee Industry with 10+ years of experience.
-    Your expertise includes:
-    1. **Coffee Branding & Packaging:** You understand the nuance of specialty vs. commodity coffee aesthetics (Third Wave, Roast Profiles).
-    2. **Shopify Sales Flows:** You are an expert in frictionless buying journeys for consumables (Subscriptions, Bundles, Grind Selection).
-    3. **Buying Process Analysis:** You analyze how customers make decisions based on origin, tasting notes, and transparency.
+    You are a Senior Digital Growth Strategist specializing in the Coffee Industry.
+    Your expertise focuses on **SEO (Search Engine Optimization)**, **SEM (Paid Search)**, and **Customer Education**.
 
     Analyze this coffee store data:
     - URL: {data['url']}
-    - Title: {data['title']}
-    - Description: {data['description']}
-    - Headings: {data['headings']}
-    - Content Snippet: {data['body'][:2500]}
+    - Title Tag: {data['title']}
+    - Meta Description: {data['description']}
+    - Headings (H1/H2): {data['headings']}
+    - Page Content: {data['body'][:2500]}
 
-    **Your Goal:** Critique this store strictly through the lens of a premium coffee brand.
-    - Does the packaging look premium? 
-    - Is the "Roast Date" or "Origin" clear? 
-    - Is the subscription model highlighted effectively?
+    **Your Goal:** Determine if this website is **findable on Google** and if it effectively **answers customer questions** about coffee.
+
+    **Analysis Criteria:**
+    1. **Findability (SEO):** Are they using high-intent keywords in their Title/Headings? (e.g., "Specialty Coffee Roaster," "Ethiopian Yirgacheffe," "Dark Roast Beans"). Or is it vague (e.g., "Welcome Home")?
+    2. **Educational Value (Q&A):** Does the content answer *how* to brew, roast levels, or flavor notes? Coffee buyers have questions; does this site answer them?
+    3. **SEM Readiness:** If they ran Google Ads today, is the landing page clear enough to convert cold traffic?
 
     Return ONLY a valid raw JSON object with this exact structure:
     {{
-        "executive_summary": "<A 3-sentence high-level critique. Focus on their market positioning (Premium vs Budget) and immediate gaps in their sales flow.>",
+        "executive_summary": "<A 3-sentence high-level critique. Focus on their organic visibility and if they are positioning themselves as an authority on coffee.>",
         "score_breakdown": {{
              "score": <integer 1-10>,
-             "reason": "<One sentence explaining the score based on coffee industry standards.>"
+             "reason": "<One sentence explaining the score based on SEO and Content depth.>"
         }},
         "sections": [
             {{
-                "title": "1. Branding, Packaging & Visual Identity",
-                "content": "<Analyze the brand vibe. Does it feel like 'Third Wave' specialty coffee or generic? Do the product names and descriptions evoke taste/smell? Critique the visual hierarchy.>"
+                "title": "1. SEO & Search Visibility",
+                "content": "<Critique the Title Tag and Headings. Are they targeting specific coffee niches (e.g., 'Cold Brew', 'Espresso') or are they invisible to search engines? Mention specific missing keywords.>"
             }},
             {{
-                "title": "2. The Buying Process & Sales Flow",
-                "content": "<Critique the path to purchase. Is it easy to select grind type/weight? Are subscriptions pushed effectively? Is the 'Add to Cart' flow frictionless?>"
+                "title": "2. Customer Q&A & Education",
+                "content": "<Coffee buyers have questions. Does this site provide Tasting Notes, Brewing Guides, or Origin stories? Critique the depth of information.>"
             }},
             {{
-                "title": "3. Market Positioning & Storytelling",
-                "content": "<Do they sell 'beans' or a 'morning ritual'? Critique their 'About Us' or origin stories. Are they transparent about sourcing (Fair Trade/Direct Trade)?>"
+                "title": "3. SEM & Ad Readiness",
+                "content": "<If they paid for clicks, would this page convert? Is the Value Proposition immediate? Is there trust (reviews/badges) above the fold?>"
             }}
         ],
         "action_plan": [
             {{
-                "step": "Step 1: Retention & LTV",
-                "detail": "<Specific advice on coffee subscriptions or loyalty. Coffee buyers are repeat buyers; are they capturing this?>",
-                "app": "Recharge, Bold, or Seal Subscriptions"
+                "step": "Step 1: Fix Technical SEO",
+                "detail": "<Specific advice on Title Tags or Meta Descriptions to rank for terms like 'Fresh Roasted Coffee'.>",
+                "app": "Plug In SEO or SEO Manager"
             }},
             {{
-                "step": "Step 2: Sensory Proof",
-                "detail": "<Advice on visualizing taste. Suggest adding flavor wheels, brewing guides, or specific review widgets that mention 'taste'.>",
-                "app": "Judge.me or Yotpo"
+                "step": "Step 2: Build 'Answer' Content",
+                "detail": "<Create content that answers specific questions (e.g., 'Grind size for V60'). Add an FAQ section.>",
+                "app": "HelpCenter | FAQ Chat or Easy FAQ"
             }},
             {{
-                "step": "Step 3: AOV Optimization",
-                "detail": "<Advice on increasing cart size. Suggest bundles (Sampler Packs), brewing gear cross-sells, or free shipping thresholds.>",
-                "app": "ReConvert or Frequently Bought Together"
+                "step": "Step 3: Trust for Paid Traffic",
+                "detail": "<Add visible reviews or 'As seen in' logos to lower Cost Per Acquisition (CPA) on ads.>",
+                "app": "Judge.me or Google Customer Reviews"
             }}
         ]
     }}
@@ -169,7 +164,7 @@ def create_word_doc(audit, url):
     doc = Document()
     
     # Title
-    heading = doc.add_heading('Coffee Brand Strategic Audit', 0)
+    heading = doc.add_heading('Coffee SEO & Search Strategy Audit', 0)
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
     doc.add_paragraph(f"Audited Site: {url}")
@@ -183,12 +178,12 @@ def create_word_doc(audit, url):
     
     # Score Section
     p_score = doc.add_paragraph()
-    run_label = p_score.add_run("Coffee Strategy Score: ")
+    run_label = p_score.add_run("Search Visibility Score: ")
     run_label.bold = True
     
     run_score = p_score.add_run(f"{audit['score_breakdown']['score']}/10")
     run_score.bold = True
-    run_score.font.color.rgb = RGBColor(111, 78, 55) # Coffee Brown
+    run_score.font.color.rgb = RGBColor(0, 128, 96) # Growth Green
     
     doc.add_paragraph(audit['score_breakdown']['reason'])
     
@@ -217,7 +212,7 @@ def create_word_doc(audit, url):
         
     # Footer
     doc.add_page_break()
-    p_footer = doc.add_paragraph("Report generated by AI Coffee Consultant.")
+    p_footer = doc.add_paragraph("Report generated by AI Coffee Growth Consultant.")
     p_footer.style = 'Quote'
 
     buffer = io.BytesIO()
@@ -227,17 +222,17 @@ def create_word_doc(audit, url):
 
 # --- 4. THE UI LAYOUT ---
 
-st.title("☕ Coffee Brand Auditor")
-st.markdown("### Specialized Analysis for Coffee Roasters")
-st.markdown("Enter your Shopify URL to get a **Senior Consultant Grade** report on your branding, packaging appeal, and sales flow.")
+st.title("☕ Coffee SEO & Growth Auditor")
+st.markdown("### Search & Content Analysis for Roasters")
+st.markdown("Enter your Shopify URL to analyze if your store is **Findable on Google** and answers customer questions effectively.")
 
 url_input = st.text_input("Store URL", placeholder="coffeeroaster.com")
 
-if st.button("Generate Strategy Report", type="primary"):
+if st.button("Analyze Search Visibility", type="primary"):
     if not url_input:
         st.warning("Please enter a URL.")
     else:
-        with st.spinner("Analyzing roast profiles, branding, and conversion flow..."):
+        with st.spinner("Analyzing Keywords, Meta Tags, and Content Depth..."):
             data, error = scrape_shopify_store(url_input)
             
             if error:
@@ -249,13 +244,13 @@ if st.button("Generate Strategy Report", type="primary"):
                     st.error("Analysis failed. Please try again.")
                 else:
                     # --- PREVIEW SECTION ---
-                    st.success("✅ Audit Complete! Download your report below.")
+                    st.success("✅ SEO Audit Complete! Download your report below.")
                     
                     with st.container(border=True):
                         st.subheader("Executive Summary")
                         st.write(audit['executive_summary'])
                         
-                        st.metric("Strategy Score", f"{audit['score_breakdown']['score']}/10")
+                        st.metric("Visibility Score", f"{audit['score_breakdown']['score']}/10")
                         
                         st.subheader("Key Findings")
                         for sec in audit['sections']:
@@ -271,8 +266,8 @@ if st.button("Generate Strategy Report", type="primary"):
                     
                     st.markdown("### 📥 Export to Google Docs / Word")
                     st.download_button(
-                        label="Download Professional Report (.docx)",
+                        label="Download SEO Strategy Report (.docx)",
                         data=doc_file,
-                        file_name=f"Coffee_Audit_{url_input}.docx",
+                        file_name=f"Coffee_SEO_Audit_{url_input}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     )
