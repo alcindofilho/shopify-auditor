@@ -324,34 +324,50 @@ def create_word_doc(audit, url):
 
 # --- 5. THE UI LAYOUT ---
 
-st.title(f"☕ {AGENCY_NAME} Store Analyst")
-st.markdown("### Complimentary Brand & SEO Audit")
-st.markdown("Our AI Agent will analyze your brand using the **Inkroast 6-Point Framework**.")
+# Force Light Mode & Clean Background (Matches your website)
+st.markdown("""
+<style>
+    [data-testid="stAppViewContainer"] {
+        background-color: #ffffff;
+    }
+    [data-testid="stHeader"] {
+        display: none;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # 1. Check for URL coming from your website
-query_params = st.query_params # Access the URL parameters
-default_url = query_params.get("target_url", "") # Look for ?target_url=...
+query_params = st.query_params
+default_url = query_params.get("target_url", "")
 
-# 2. The Input Field
-# If a URL came from your site, we pre-fill it here.
-url_input = st.text_input("Store URL", value=default_url, placeholder="yourstore.com", label_visibility="collapsed")
+# 2. Logic: Should we show the inputs?
+if default_url:
+    # --- AUTO MODE (Embedded on Inkroast.com) ---
+    # We hide the title/inputs because your website already has them.
+    # We just run the logic immediately.
+    url_input = default_url
+    should_run = True
+else:
+    # --- MANUAL MODE (Testing the tool directly) ---
+    # We show the title and inputs so you can use it standalone.
+    st.title(f"☕ {AGENCY_NAME} Store Analyst")
+    st.markdown("### Complimentary Brand & SEO Audit")
+    
+    url_input = st.text_input("Store URL", placeholder="yourstore.com", label_visibility="collapsed")
+    
+    if st.button("Generate My Report 🚀", type="primary"):
+        should_run = True
+    else:
+        should_run = False
 
-# 3. Auto-Start Logic
-# We run the audit if: 
-# A) The user clicks the button manually 
-# OR 
-# B) We detected a URL from your website (auto-run)
-manual_run = st.button("Generate My Report 🚀", type="primary")
-auto_run = True if default_url else False
-
-if manual_run or auto_run:
+# 3. Execution Phase
+if should_run:
     if not url_input:
         st.warning("Please enter a URL.")
     else:
-        with st.spinner("Scanning H-Tags, Brand Voice, and Conversion Paths..."):
-            # ... (The rest of your analysis code remains exactly the same) ...
+        # Show a spinner while working
+        with st.spinner("Analyzing brand identity and SEO structure..."):
             data, error = scrape_shopify_store(url_input)
-            # ...
             
             if error:
                 st.error(error)
@@ -361,45 +377,36 @@ if manual_run or auto_run:
                 if "error" in audit:
                     st.error("Analysis failed. Please try again.")
                 else:
-                    # --- PREVIEW ---
-                    st.success("✅ Analysis Complete.")
-                    
+                    # --- REPORT UI ---
+                    # We render the success message slightly differently for embed
+                    if not default_url:
+                        st.success("✅ Analysis Complete.")
+
                     with st.container(border=True):
                         st.subheader("Executive Summary")
                         st.write(audit['executive_summary'])
                         st.metric("Health Score", f"{audit['score_breakdown']['score']}/10")
                         
-                        # --- 4 TABS TO GROUP THE 6 POINTS ---
-                        tab1, tab2, tab3, tab4 = st.tabs(["🎨 Brand & Sales", "👥 Audience & CTAs", "🔍 SEO & AI", "🛠 Strategy & Stack"])
+                        # Tabs
+                        tab1, tab2, tab3, tab4 = st.tabs(["🎨 Brand", "👥 Audience", "🔍 SEO & AI", "🛠 Strategy"])
                         
                         with tab1:
-                            # Point 1
                             st.markdown(f"### {audit['section_1_branding']['title']}")
                             st.write(audit['section_1_branding']['content'])
                             for imp in audit['section_1_branding']['improvements']:
                                 st.markdown(f"- {imp}")
                             st.markdown("---")
-                            # Point 2
                             st.markdown(f"### {audit['section_2_sales']['title']}")
                             st.write(audit['section_2_sales']['content'])
-                            for imp in audit['section_2_sales']['improvements']:
-                                st.markdown(f"- {imp}")
 
                         with tab2:
-                            # Point 3
                             st.markdown(f"### {audit['section_3_conversion']['title']}")
                             st.write(audit['section_3_conversion']['content'])
-                            for imp in audit['section_3_conversion']['improvements']:
-                                st.markdown(f"- {imp}")
                             st.markdown("---")
-                            # Point 4
                             st.markdown(f"### {audit['section_4_audience']['title']}")
                             st.write(audit['section_4_audience']['content'])
-                            for imp in audit['section_4_audience']['improvements']:
-                                st.markdown(f"- {imp}")
 
                         with tab3:
-                            # Point 5 (Detailed)
                             st.markdown(f"### {audit['section_5_seo']['title']}")
                             st.write(audit['section_5_seo']['content'])
                             
@@ -407,14 +414,9 @@ if manual_run or auto_run:
                             st.info(audit['section_5_seo']['ai_readiness'])
 
                             st.markdown("#### ⚙️ Technical Data")
-                            
                             st.code(audit['section_5_seo']['technical_notes'], language="text")
-                            
-                            for imp in audit['section_5_seo']['improvements']:
-                                st.markdown(f"- {imp}")
                                     
                         with tab4:
-                            # Point 6
                             st.markdown(f"### {audit['section_6_strategy']['title']}")
                             st.write(audit['section_6_strategy']['content'])
                             st.markdown("---")
@@ -425,12 +427,8 @@ if manual_run or auto_run:
                                 <div class="service-box">
                                     <div style="font-size:12px; text-transform:uppercase; color:#666; font-weight:bold; margin-bottom:5px;">{stack['category']}</div>
                                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <div>
-                                            <strong style="color:#333;">🛠 Tool:</strong> {stack['tool']}
-                                        </div>
-                                        <div>
-                                            <strong style="color:#008060;">🚀 Service:</strong> {stack['service']}
-                                        </div>
+                                        <div><strong style="color:#333;">🛠 Tool:</strong> {stack['tool']}</div>
+                                        <div><strong style="color:#008060;">🚀 Service:</strong> {stack['service']}</div>
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
