@@ -9,50 +9,71 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import io
 import datetime
 
-# --- 1. AGENCY CONFIGURATION (EDIT THIS) ---
+# --- 1. AGENCY CONFIGURATION ---
 AGENCY_NAME = "Inkroast"
 AGENCY_URL = "https://www.inkroast.com"
-BOOKING_LINK = "https://portal.inkroast.com/discovery" # Your Calendly or Contact Page
+BOOKING_LINK = "https://portal.inkroast.com/discovery"
 
 # --- 2. CONFIGURATION & STYLING ---
-st.set_page_config(page_title=f"{AGENCY_NAME} - Store Audit", page_icon="🚀", layout="centered")
+st.set_page_config(page_title=f"{AGENCY_NAME} Store Auditor", page_icon="☕", layout="centered")
 
 st.markdown("""
 <style>
+    /* Report Container */
     .report-container {
         background-color: #ffffff;
         padding: 40px;
         border: 1px solid #e0e0e0;
-        border-radius: 5px;
+        border-radius: 8px;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         color: #333;
     }
     
-    h1 { color: #000000; font-family: 'Arial', sans-serif; font-weight: bold; }
-    h2 { color: #2c3e50; font-family: 'Arial', sans-serif; }
+    /* Typography */
+    h1 { color: #1a1a1a; font-family: 'Arial', sans-serif; font-weight: 800; }
+    h2 { color: #2c3e50; font-family: 'Arial', sans-serif; font-weight: 600; }
     
-    /* "Hire Us" Button Styling */
+    /* "Generate Report" Button - INKROAST GREEN */
     .stButton>button { 
         width: 100%; 
-        background-color: #000000; 
+        background-color: #008060; /* Shopify/Growth Green */
         color: white; 
         font-weight: bold; 
         border: none;
-        padding: 12px;
-        border-radius: 4px;
+        padding: 14px;
+        border-radius: 6px;
+        font-size: 16px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #333333;
-        border: 1px solid #000;
+        background-color: #004c3f; /* Darker Green on Hover */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
-    /* Success Message */
+    /* Success Message Box */
     .stSuccess {
         background-color: #f0fdf4;
         border: 1px solid #bbf7d0;
         color: #166534;
+    }
+    
+    /* Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #f1f3f4;
+        border-radius: 4px;
+        padding: 10px 20px;
+        gap: 1px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #e6fffa;
+        color: #008060;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -86,7 +107,7 @@ def scrape_shopify_store(url):
         meta = soup.find('meta', attrs={'name': 'description'})
         desc = meta['content'] if meta else "No Meta Description"
         headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
-        body = soup.get_text(separator=' ', strip=True)[:4000]
+        body = soup.get_text(separator=' ', strip=True)[:4500]
         
         return {
             "url": url,
@@ -99,20 +120,20 @@ def scrape_shopify_store(url):
         return None, f"Scraping Error: {str(e)}"
 
 def analyze_store_json(data):
-    """Generates the Audit."""
+    """Generates the Inkroast Strategic Audit."""
     model = genai.GenerativeModel('models/gemini-2.5-flash')
     
     prompt = f"""
-    You are a Senior Strategist at {AGENCY_NAME}, a premier Shopify Agency.
+    You are a Senior Digital Strategist at {AGENCY_NAME}, a high-end Shopify Agency.
     
     Analyze this store:
     - URL: {data['url']}
     - Title: {data['title']}
     - Desc: {data['description']}
-    - Content: {data['body'][:3000]}
+    - Content: {data['body'][:3500]}
 
     **Your Role:**
-    Identify revenue leaks and opportunities for growth.
+    Identify revenue leaks and opportunities for growth using the "Inkroast Method" (Brand + SEO + Tech).
     
     Return ONLY a valid raw JSON object with this exact structure:
     {{
@@ -122,7 +143,7 @@ def analyze_store_json(data):
              "reason": "<One sentence explaining the score.>"
         }},
         "branding_perception": {{
-            "summary": "<Deep dive into brand identity.>",
+            "summary": "<Deep dive into brand identity and storytelling.>",
             "improvements": ["<Specific suggestion 1>", "<Specific suggestion 2>"]
         }},
         "seo_keyword_review": {{
@@ -135,19 +156,22 @@ def analyze_store_json(data):
                 "title": "<Strategy Name (e.g. SEO Content Hub)>",
                 "detail": "<Specific actionable advice.>",
                 "impact": "High/Medium",
+                "app": "<Recommended Shopify App (e.g. Plug In SEO)>",
                 "service_match": "SEO Optimization"
             }},
             {{
                 "title": "<Strategy Name (e.g. Email Retention)>",
                 "detail": "<Specific actionable advice.>",
                 "impact": "High/Medium",
-                "service_match": "Email Marketing Setup"
+                "app": "<Recommended Shopify App (e.g. Klaviyo)>",
+                "service_match": "Email Automation Setup"
             }},
             {{
-                "title": "<Strategy Name (e.g. Visual Redesign)>",
+                "title": "<Strategy Name (e.g. Social Proof)>",
                 "detail": "<Specific actionable advice.>",
                 "impact": "High/Medium",
-                "service_match": "Conversion Design"
+                "app": "<Recommended Shopify App (e.g. Judge.me, Loox)>",
+                "service_match": "CRO Audit & Design"
             }}
         ]
     }}
@@ -160,7 +184,7 @@ def analyze_store_json(data):
         return {"error": str(e)}
 
 def create_word_doc(audit, url):
-    """Generates a formatted .docx file with Agency Branding."""
+    """Generates a formatted .docx file with Inkroast Branding."""
     doc = Document()
     
     # Title
@@ -181,7 +205,7 @@ def create_word_doc(audit, url):
     run_label.bold = True
     run_score = p_score.add_run(f"{audit['score_breakdown']['score']}/10")
     run_score.bold = True
-    run_score.font.color.rgb = RGBColor(0, 0, 0)
+    run_score.font.color.rgb = RGBColor(0, 128, 96) # Green
     
     # Sections
     doc.add_heading('1. Branding & Identity', level=1)
@@ -198,17 +222,30 @@ def create_word_doc(audit, url):
         p = doc.add_paragraph(style='List Bullet')
         run_title = p.add_run(f"{item['title']}")
         run_title.bold = True
-        doc.add_paragraph(item['detail'], style='List Continue')
+        
+        p_detail = doc.add_paragraph(item['detail'])
+        p_detail.paragraph_format.left_indent = Pt(18)
+        
+        # Tool & Service Recommendation
+        p_meta = doc.add_paragraph()
+        p_meta.paragraph_format.left_indent = Pt(18)
+        run_tool = p_meta.add_run(f"Tool: {item['app']}  |  ")
+        run_tool.italic = True
+        run_service = p_meta.add_run(f"Inkroast Service: {item['service_match']}")
+        run_service.bold = True
+        run_service.font.color.rgb = RGBColor(0, 128, 96)
+        
+        doc.add_paragraph() # Spacer
         
     # --- AGENCY PITCH SECTION ---
     doc.add_page_break()
     doc.add_heading('Turn this Audit into Revenue', level=1)
-    doc.add_paragraph("You have the roadmap, now you need the execution. Our team specializes in implementing these exact strategies for Shopify brands.")
+    doc.add_paragraph("You have the roadmap, now you need the execution. Inkroast specializes in implementing these exact strategies for Shopify brands.")
     
     doc.add_heading('How we can help:', level=2)
     doc.add_paragraph("• Technical SEO Implementation", style='List Bullet')
     doc.add_paragraph("• Conversion Rate Optimization (CRO)", style='List Bullet')
-    doc.add_paragraph("• Email & SMS Automation", style='List Bullet')
+    doc.add_paragraph("• Email & SMS Automation Setup", style='List Bullet')
     
     p_call = doc.add_paragraph()
     p_call.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -225,17 +262,17 @@ def create_word_doc(audit, url):
 
 # --- 5. THE UI LAYOUT ---
 
-st.title(f"🚀 {AGENCY_NAME} Auditor")
-st.markdown("### Complimentary Store Analysis")
-st.markdown("Enter your Shopify URL. Our AI Agent will analyze your brand and identify **opportunities where we can help you grow.**")
+st.title(f"☕ {AGENCY_NAME} Store Analyst")
+st.markdown("### Complimentary Brand & SEO Audit")
+st.markdown("Enter your Shopify URL. Our AI Agent will analyze your brand and identify **opportunities where Inkroast can help you grow.**")
 
-url_input = st.text_input("Store URL", placeholder="yourstore.com")
+url_input = st.text_input("Store URL", placeholder="yourstore.com", label_visibility="collapsed")
 
-if st.button("Generate My Report", type="primary"):
+if st.button("Generate My Report 🚀", type="primary"):
     if not url_input:
         st.warning("Please enter a URL.")
     else:
-        with st.spinner("Analyzing strategy..."):
+        with st.spinner("Analyzing brand identity and SEO structure..."):
             data, error = scrape_shopify_store(url_input)
             
             if error:
@@ -275,18 +312,24 @@ if st.button("Generate My Report", type="primary"):
                                     st.write(f"• {k}")
                                     
                         with tab3:
-                            st.info("These are high-impact strategies we recommend for your store.")
+                            st.info("High-impact strategies we recommend for your store:")
                             for strat in audit['traffic_strategies']:
                                 st.markdown(f"**{strat['title']}**")
                                 st.write(strat['detail'])
-                                # THE PITCH:
-                                st.caption(f"🔧 Service Required: {strat['service_match']}")
+                                
+                                # The "Hybrid" Recommendation
+                                st.markdown(f"""
+                                <div style="background-color:#f9fafb; padding:10px; border-radius:5px; border-left: 3px solid #008060; font-size: 14px;">
+                                    <strong>🛠 Tool:</strong> {strat['app']} <br>
+                                    <strong>🚀 Service:</strong> {strat['service_match']}
+                                </div>
+                                """, unsafe_allow_html=True)
                                 st.markdown("---")
                             
                             # CALL TO ACTION IN UI
                             st.markdown(f"### Ready to implement?")
                             st.link_button(
-                                label="📅 Book a Call with our Team",
+                                label="📅 Book a Discovery Call with Inkroast",
                                 url=BOOKING_LINK,
                                 use_container_width=True
                             )
