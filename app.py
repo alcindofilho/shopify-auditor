@@ -326,16 +326,32 @@ def create_word_doc(audit, url):
 
 st.title(f"☕ {AGENCY_NAME} Store Analyst")
 st.markdown("### Complimentary Brand & SEO Audit")
-st.markdown("Enter your Shopify URL. Our AI Agent will analyze your brand using the **Inkroast 6-Point Framework**.")
+st.markdown("Our AI Agent will analyze your brand using the **Inkroast 6-Point Framework**.")
 
-url_input = st.text_input("Store URL", placeholder="yourstore.com", label_visibility="collapsed")
+# 1. Check for URL coming from your website
+query_params = st.query_params # Access the URL parameters
+default_url = query_params.get("target_url", "") # Look for ?target_url=...
 
-if st.button("Generate My Report 🚀", type="primary"):
+# 2. The Input Field
+# If a URL came from your site, we pre-fill it here.
+url_input = st.text_input("Store URL", value=default_url, placeholder="yourstore.com", label_visibility="collapsed")
+
+# 3. Auto-Start Logic
+# We run the audit if: 
+# A) The user clicks the button manually 
+# OR 
+# B) We detected a URL from your website (auto-run)
+manual_run = st.button("Generate My Report 🚀", type="primary")
+auto_run = True if default_url else False
+
+if manual_run or auto_run:
     if not url_input:
         st.warning("Please enter a URL.")
     else:
         with st.spinner("Scanning H-Tags, Brand Voice, and Conversion Paths..."):
+            # ... (The rest of your analysis code remains exactly the same) ...
             data, error = scrape_shopify_store(url_input)
+            # ...
             
             if error:
                 st.error(error)
