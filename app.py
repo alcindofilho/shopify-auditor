@@ -36,7 +36,7 @@ st.markdown("""
     /* "Generate Report" Button - INKROAST GREEN */
     .stButton>button { 
         width: 100%; 
-        background-color: #008060; /* Shopify/Growth Green */
+        background-color: #008060; 
         color: white; 
         font-weight: bold; 
         border: none;
@@ -48,7 +48,7 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #004c3f; /* Darker Green on Hover */
+        background-color: #004c3f; 
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     
@@ -59,7 +59,7 @@ st.markdown("""
         color: #166534;
     }
     
-    /* --- TAB STYLING (Grey Background, Black Text, Green Active) --- */
+    /* --- TAB STYLING --- */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         background-color: transparent;
@@ -78,10 +78,20 @@ st.markdown("""
     
     /* Active Tab Styling */
     .stTabs [aria-selected="true"] {
-        background-color: #e6fffa; /* Very Light Green tint */
-        color: #000000;            /* Black Text */
-        border: 1px solid #008060; /* GREEN Overlay/Border */
-        border-bottom: 3px solid #008060; /* Thick Green Bottom for "Overlay" feel */
+        background-color: #e6fffa; 
+        color: #000000;            
+        border: 1px solid #008060; 
+        border-bottom: 3px solid #008060; 
+    }
+    
+    /* Service/Tool Box Styling */
+    .service-box {
+        background-color: #f0f2f6; 
+        padding: 15px; 
+        border-radius: 6px; 
+        border-left: 5px solid #008060; 
+        color: #000000;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -97,7 +107,7 @@ except Exception:
 # --- 4. CORE FUNCTIONS ---
 
 def scrape_shopify_store(url):
-    """Scrapes the homepage for text content."""
+    """Scrapes the homepage for text content AND technical SEO data."""
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         url = url.strip()
@@ -110,76 +120,116 @@ def scrape_shopify_store(url):
             
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Safe extraction
+        # 1. Basic Content
         title = soup.title.string if soup.title else "No Title"
         meta = soup.find('meta', attrs={'name': 'description'})
         desc = meta['content'] if meta else "No Meta Description"
-        headings = [h.get_text().strip() for h in soup.find_all(['h1', 'h2', 'h3'])]
-        body = soup.get_text(separator=' ', strip=True)[:4500]
+        
+        # 2. Technical SEO Data (H-Tags)
+        h1_tags = [h.get_text().strip() for h in soup.find_all('h1')]
+        h2_tags = [h.get_text().strip() for h in soup.find_all('h2')]
+        
+        # 3. Image Analysis (Alt Tags)
+        images = soup.find_all('img')
+        total_images = len(images)
+        missing_alt = sum(1 for img in images if not img.get('alt') or img.get('alt') == "")
+        
+        body = soup.get_text(separator=' ', strip=True)[:5000]
         
         return {
             "url": url,
             "title": title,
             "description": desc,
-            "headings": headings[:20],
+            "h1_tags": h1_tags,
+            "h2_tags": h2_tags[:6],
+            "image_stats": f"{missing_alt} out of {total_images} images are missing description tags (Alt Text).",
             "body": body
         }, None
     except Exception as e:
         return None, f"Scraping Error: {str(e)}"
 
 def analyze_store_json(data):
-    """Generates the Inkroast Strategic Audit."""
+    """Generates the Inkroast Strategic Audit based on the 6-point framework."""
     model = genai.GenerativeModel('models/gemini-2.5-flash')
     
     prompt = f"""
-    You are a Senior Digital Strategist at {AGENCY_NAME}, a high-end Shopify Agency, with experience in coffee business, shopify development and SEO/CRO.
+    You are a Senior Strategist at {AGENCY_NAME}.
     
-    Analyze this store:
+    Analyze this store data:
     - URL: {data['url']}
-    - Title: {data['title']}
-    - Desc: {data['description']}
-    - Content: {data['body'][:3500]}
+    - Title Tag: {data['title']}
+    - Meta Desc: {data['description']}
+    - H1 Tags found: {data['h1_tags']}
+    - H2 Tags found: {data['h2_tags']}
+    - Image Analysis: {data['image_stats']}
+    - Content Snippet: {data['body'][:3500]}
 
     **Your Role:**
-    Identify revenue leaks and sales opportunities for growth using the "Inkroast Method" (Brand + SEO + Tech).
+    Perform a deep audit covering exactly these 6 sections:
+    
+    1. **Branding & Messaging:** Clarity, consistency, focus on ideal customer, value prop resonance.
+    2. **Sales Proposition & Differentiation:** Positioning, competitive comparison, cost transparency.
+    3. **Conversion Path & CTAs:** CTA analysis, social proof, commitment to early stage customers.
+    4. **Target Audience Relevance:** Language, emotional connection, narrative, success stories.
+    5. **SEO & AI Visibility:** Technical SEO (H1/H2/Alt tags) AND AI Readiness (is content structured for AI answers?).
+    6. **Strategic Opportunities:** High-level growth gaps.
+
+    Group all software recommendations into a final "Tech Stack" section.
     
     Return ONLY a valid raw JSON object with this exact structure:
     {{
-        "executive_summary": "<2-3 sentence high-level summary of the store's potential.>",
+        "executive_summary": "<High-level summary of the store's potential.>",
         "score_breakdown": {{
              "score": <integer 1-10>,
              "reason": "<One sentence explaining the score.>"
         }},
-        "branding_perception": {{
-            "summary": "<Deep dive into brand identity and storytelling.>",
-            "improvements": ["<Specific suggestion 1>", "<Specific suggestion 2>"]
+        "section_1_branding": {{
+            "title": "1. Branding & Messaging",
+            "content": "<Analysis of clarity, consistency, and value prop resonance.>",
+            "improvements": ["<Point 1>", "<Point 2>"]
         }},
-        "seo_keyword_review": {{
-            "analysis": "<Review of technical SEO and keywords.>",
-            "keywords_detected": ["<Keyword 1>", "<Keyword 2>", "<Keyword 3>"],
-            "keywords_recommended": ["<Better Keyword 1>", "<Better Keyword 2>", "<Long-tail Keyword 3>"]
+        "section_2_sales": {{
+            "title": "2. Sales Proposition & Differentiation",
+            "content": "<Analysis of positioning, demonstration, and transparency.>",
+            "improvements": ["<Point 1>", "<Point 2>"]
         }},
-        "traffic_strategies": [
+        "section_3_conversion": {{
+            "title": "3. Conversion Path & CTAs",
+            "content": "<Analysis of CTAs, social proof, and friction points.>",
+            "improvements": ["<Point 1>", "<Point 2>"]
+        }},
+        "section_4_audience": {{
+            "title": "4. Target Audience Relevance",
+            "content": "<Analysis of emotional connection, language fit, and narrative.>",
+            "improvements": ["<Point 1>", "<Point 2>"]
+        }},
+        "section_5_seo": {{
+            "title": "5. SEO & AI Visibility",
+            "content": "<Analysis of findability.>",
+            "technical_notes": "H1: {data['h1_tags']} | Images: {data['image_stats']}",
+            "ai_readiness": "<Is the content structured for AI/LLMs? (e.g. clear Q&A, lists)>",
+            "improvements": ["<Point 1>", "<Point 2>"]
+        }},
+        "section_6_strategy": {{
+            "title": "6. Strategic Opportunities",
+            "content": "<Major growth levers not currently being used.>",
+            "improvements": ["<Point 1>", "<Point 2>"]
+        }},
+        "recommended_stack": [
             {{
-                "title": "<Strategy Name (e.g. SEO Content Hub)>",
-                "detail": "<Specific actionable advice.>",
-                "impact": "High/Medium",
-                "app": "<Recommended Shopify App (e.g. Plug In SEO)>",
-                "service_match": "SEO Optimization"
+                "category": "SEO & Tech",
+                "tool": "Plug In SEO",
+                "service": "Technical SEO Audit & Fixes"
             }},
             {{
-                "title": "<Strategy Name (e.g. Email Retention)>",
-                "detail": "<Specific actionable advice.>",
-                "impact": "High/Medium",
-                "app": "<Recommended Shopify App (e.g. Klaviyo)>",
-                "service_match": "Email Automation Setup"
+                "category": "Email Marketing",
+                "tool": "Klaviyo",
+                "service": "Flow Automation Setup"
             }},
             {{
-                "title": "<Strategy Name (e.g. Social Proof)>",
-                "detail": "<Specific actionable advice.>",
-                "impact": "High/Medium",
-                "app": "<Recommended Shopify App (e.g. Judge.me, Loox)>",
-                "service_match": "CRO Audit & Design"
+                "category": "Social Proof",
+                "tool": "Judge.me",
+                "service": "Review Widget Customization"
             }}
         ]
     }}
@@ -192,7 +242,7 @@ def analyze_store_json(data):
         return {"error": str(e)}
 
 def create_word_doc(audit, url):
-    """Generates a formatted .docx file with Inkroast Branding."""
+    """Generates a formatted .docx file with the 6-point structure."""
     doc = Document()
     
     # Title
@@ -215,45 +265,49 @@ def create_word_doc(audit, url):
     run_score.bold = True
     run_score.font.color.rgb = RGBColor(0, 128, 96) # Green
     
-    # Sections
-    doc.add_heading('1. Branding & Identity', level=1)
-    doc.add_paragraph(audit['branding_perception']['summary'])
-    for imp in audit['branding_perception']['improvements']:
-        doc.add_paragraph(imp, style='List Bullet')
-
-    doc.add_heading('2. SEO & Keywords', level=1)
-    doc.add_paragraph(audit['seo_keyword_review']['analysis'])
+    # --- LOOP THROUGH THE 6 SECTIONS ---
+    sections = [
+        audit['section_1_branding'],
+        audit['section_2_sales'],
+        audit['section_3_conversion'],
+        audit['section_4_audience'],
+        audit['section_5_seo'],
+        audit['section_6_strategy']
+    ]
     
-    # Traffic Strategies
-    doc.add_heading('3. Growth Opportunities', level=1)
-    for item in audit['traffic_strategies']:
-        p = doc.add_paragraph(style='List Bullet')
-        run_title = p.add_run(f"{item['title']}")
-        run_title.bold = True
+    for sec in sections:
+        doc.add_heading(sec['title'], level=1)
+        doc.add_paragraph(sec['content'])
         
-        p_detail = doc.add_paragraph(item['detail'])
-        p_detail.paragraph_format.left_indent = Pt(18)
-        
-        # Tool & Service Recommendation
-        p_meta = doc.add_paragraph()
-        p_meta.paragraph_format.left_indent = Pt(18)
-        run_tool = p_meta.add_run(f"Tool: {item['app']}  |  ")
-        run_tool.italic = True
-        run_service = p_meta.add_run(f"Inkroast Service: {item['service_match']}")
-        run_service.bold = True
-        run_service.font.color.rgb = RGBColor(0, 128, 96)
-        
-        doc.add_paragraph() # Spacer
-        
+        # Add special sub-fields for SEO section
+        if "technical_notes" in sec:
+            doc.add_heading("Technical Data", level=2)
+            doc.add_paragraph(sec['technical_notes'])
+            doc.add_paragraph(f"AI Visibility: {sec['ai_readiness']}")
+
+        doc.add_heading("Recommended Improvements:", level=3)
+        for imp in sec['improvements']:
+            doc.add_paragraph(imp, style='List Bullet')
+
+    # 4. Recommended Stack
+    doc.add_heading('7. Recommended Tools & Services', level=1)
+    table = doc.add_table(rows=1, cols=3)
+    table.style = 'Light Shading Accent 1'
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = 'Category'
+    hdr_cells[1].text = 'Recommended Tool'
+    hdr_cells[2].text = 'Inkroast Service'
+    
+    for stack in audit['recommended_stack']:
+        row_cells = table.add_row().cells
+        row_cells[0].text = stack['category']
+        row_cells[1].text = stack['tool']
+        row_cells[2].text = stack['service']
+
     # --- AGENCY PITCH SECTION ---
     doc.add_page_break()
     doc.add_heading('Turn this Audit into Revenue', level=1)
     doc.add_paragraph("You have the roadmap, now you need the execution. Inkroast specializes in implementing these exact strategies for Shopify brands.")
-    
-    doc.add_heading('How we can help:', level=2)
-    doc.add_paragraph("• Technical SEO Implementation", style='List Bullet')
-    doc.add_paragraph("• Conversion Rate Optimization (CRO)", style='List Bullet')
-    doc.add_paragraph("• Email & SMS Automation Setup", style='List Bullet')
     
     p_call = doc.add_paragraph()
     p_call.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -272,7 +326,7 @@ def create_word_doc(audit, url):
 
 st.title(f"☕ {AGENCY_NAME} Store Analyst")
 st.markdown("### Complimentary Brand & SEO Audit")
-st.markdown("Enter your Shopify URL. Our AI Agent will analyze your brand and identify **opportunities where Inkroast can help you grow.**")
+st.markdown("Enter your Shopify URL. Our AI Agent will analyze your brand using the **Inkroast 6-Point Framework**.")
 
 url_input = st.text_input("Store URL", placeholder="yourstore.com", label_visibility="collapsed")
 
@@ -280,7 +334,7 @@ if st.button("Generate My Report 🚀", type="primary"):
     if not url_input:
         st.warning("Please enter a URL.")
     else:
-        with st.spinner("Analyzing brand identity and SEO structure..."):
+        with st.spinner("Scanning H-Tags, Brand Voice, and Conversion Paths..."):
             data, error = scrape_shopify_store(url_input)
             
             if error:
@@ -299,50 +353,73 @@ if st.button("Generate My Report 🚀", type="primary"):
                         st.write(audit['executive_summary'])
                         st.metric("Health Score", f"{audit['score_breakdown']['score']}/10")
                         
-                        # Tabs for the sections
-                        tab1, tab2, tab3 = st.tabs(["🎨 Brand", "🔍 SEO", "📈 Growth Plan"])
+                        # --- 4 TABS TO GROUP THE 6 POINTS ---
+                        tab1, tab2, tab3, tab4 = st.tabs(["🎨 Brand & Sales", "👥 Audience & CTAs", "🔍 SEO & AI", "🛠 Strategy & Stack"])
                         
                         with tab1:
-                            st.write(audit['branding_perception']['summary'])
-                            st.markdown("**Core Improvements:**")
-                            for imp in audit['branding_perception']['improvements']:
+                            # Point 1
+                            st.markdown(f"### {audit['section_1_branding']['title']}")
+                            st.write(audit['section_1_branding']['content'])
+                            for imp in audit['section_1_branding']['improvements']:
                                 st.markdown(f"- {imp}")
-                        
+                            st.markdown("---")
+                            # Point 2
+                            st.markdown(f"### {audit['section_2_sales']['title']}")
+                            st.write(audit['section_2_sales']['content'])
+                            for imp in audit['section_2_sales']['improvements']:
+                                st.markdown(f"- {imp}")
+
                         with tab2:
-                            st.write(audit['seo_keyword_review']['analysis'])
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.info("**Current Keywords**")
-                                for k in audit['seo_keyword_review']['keywords_detected']:
-                                    st.write(f"• {k}")
-                            with col2:
-                                st.success("**Missed Opportunities**")
-                                for k in audit['seo_keyword_review']['keywords_recommended']:
-                                    st.write(f"• {k}")
-                                    
+                            # Point 3
+                            st.markdown(f"### {audit['section_3_conversion']['title']}")
+                            st.write(audit['section_3_conversion']['content'])
+                            for imp in audit['section_3_conversion']['improvements']:
+                                st.markdown(f"- {imp}")
+                            st.markdown("---")
+                            # Point 4
+                            st.markdown(f"### {audit['section_4_audience']['title']}")
+                            st.write(audit['section_4_audience']['content'])
+                            for imp in audit['section_4_audience']['improvements']:
+                                st.markdown(f"- {imp}")
+
                         with tab3:
-                            st.info("High-impact strategies we recommend for your store:")
-                            for strat in audit['traffic_strategies']:
-                                st.markdown(f"**{strat['title']}**")
-                                st.write(strat['detail'])
-                                
-                                # The "Hybrid" Recommendation Box (Grey BG, Black Text, Green Overlay)
+                            # Point 5 (Detailed)
+                            st.markdown(f"### {audit['section_5_seo']['title']}")
+                            st.write(audit['section_5_seo']['content'])
+                            
+                            st.markdown("#### 🤖 AI Visibility Check")
+                            st.info(audit['section_5_seo']['ai_readiness'])
+
+                            st.markdown("#### ⚙️ Technical Data")
+                            
+                            st.code(audit['section_5_seo']['technical_notes'], language="text")
+                            
+                            for imp in audit['section_5_seo']['improvements']:
+                                st.markdown(f"- {imp}")
+                                    
+                        with tab4:
+                            # Point 6
+                            st.markdown(f"### {audit['section_6_strategy']['title']}")
+                            st.write(audit['section_6_strategy']['content'])
+                            st.markdown("---")
+                            
+                            st.markdown("### Recommended Tech Stack")
+                            for stack in audit['recommended_stack']:
                                 st.markdown(f"""
-                                <div style="
-                                    background-color: #f0f2f6; 
-                                    padding: 15px; 
-                                    border-radius: 6px; 
-                                    border-left: 5px solid #008060; 
-                                    color: #000000;
-                                    margin-bottom: 20px;
-                                ">
-                                    <strong style="color: #333;">🛠 Tool:</strong> {strat['app']} <br>
-                                    <strong style="color: #008060;">🚀 Service:</strong> {strat['service_match']}
+                                <div class="service-box">
+                                    <div style="font-size:12px; text-transform:uppercase; color:#666; font-weight:bold; margin-bottom:5px;">{stack['category']}</div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <div>
+                                            <strong style="color:#333;">🛠 Tool:</strong> {stack['tool']}
+                                        </div>
+                                        <div>
+                                            <strong style="color:#008060;">🚀 Service:</strong> {stack['service']}
+                                        </div>
+                                    </div>
                                 </div>
                                 """, unsafe_allow_html=True)
                             
-                            # CALL TO ACTION IN UI
-                            st.markdown(f"### Ready to implement?")
+                            st.markdown("### Ready to implement?")
                             st.link_button(
                                 label="📅 Book a Discovery Call with Inkroast",
                                 url=BOOKING_LINK,
