@@ -59,21 +59,29 @@ st.markdown("""
         color: #166534;
     }
     
-    /* Tab Styling */
+    /* --- TAB STYLING (Grey Background, Black Text, Green Active) --- */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 8px;
+        background-color: transparent;
     }
+    
     .stTabs [data-baseweb="tab"] {
         height: 50px;
         white-space: pre-wrap;
-        background-color: #f1f3f4;
+        background-color: #f0f2f6; /* GREY Background */
+        color: #000000;            /* BLACK Text */
         border-radius: 4px;
         padding: 10px 20px;
-        gap: 1px;
+        font-weight: 600;
+        border: 1px solid #e0e0e0;
     }
+    
+    /* Active Tab Styling */
     .stTabs [aria-selected="true"] {
-        background-color: #e6fffa;
-        color: #008060;
+        background-color: #e6fffa; /* Very Light Green tint */
+        color: #000000;            /* Black Text */
+        border: 1px solid #008060; /* GREEN Overlay/Border */
+        border-bottom: 3px solid #008060; /* Thick Green Bottom for "Overlay" feel */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -291,6 +299,7 @@ if st.button("Generate My Report 🚀", type="primary"):
                         st.write(audit['executive_summary'])
                         st.metric("Health Score", f"{audit['score_breakdown']['score']}/10")
                         
+                        # Tabs for the sections
                         tab1, tab2, tab3 = st.tabs(["🎨 Brand", "🔍 SEO", "📈 Growth Plan"])
                         
                         with tab1:
@@ -317,14 +326,20 @@ if st.button("Generate My Report 🚀", type="primary"):
                                 st.markdown(f"**{strat['title']}**")
                                 st.write(strat['detail'])
                                 
-                                # The "Hybrid" Recommendation
+                                # The "Hybrid" Recommendation Box (Grey BG, Black Text, Green Overlay)
                                 st.markdown(f"""
-                                <div style="background-color:#f9fafb; padding:10px; border-radius:5px; border-left: 3px solid #008060; font-size: 14px;">
-                                    <strong>🛠 Tool:</strong> {strat['app']} <br>
-                                    <strong>🚀 Service:</strong> {strat['service_match']}
+                                <div style="
+                                    background-color: #f0f2f6; 
+                                    padding: 15px; 
+                                    border-radius: 6px; 
+                                    border-left: 5px solid #008060; 
+                                    color: #000000;
+                                    margin-bottom: 20px;
+                                ">
+                                    <strong style="color: #333;">🛠 Tool:</strong> {strat['app']} <br>
+                                    <strong style="color: #008060;">🚀 Service:</strong> {strat['service_match']}
                                 </div>
                                 """, unsafe_allow_html=True)
-                                st.markdown("---")
                             
                             # CALL TO ACTION IN UI
                             st.markdown(f"### Ready to implement?")
