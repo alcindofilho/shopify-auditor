@@ -132,7 +132,7 @@ def analyze_store_json(data):
     model = genai.GenerativeModel('models/gemini-2.5-flash')
     
     prompt = f"""
-    You are a Senior Digital Strategist at {AGENCY_NAME}, a high-end Shopify Agency.
+    You are a Senior Digital Strategist at {AGENCY_NAME}, a high-end Shopify Agency, with experience in coffee business, shopify development and SEO/CRO.
     
     Analyze this store:
     - URL: {data['url']}
@@ -141,7 +141,7 @@ def analyze_store_json(data):
     - Content: {data['body'][:3500]}
 
     **Your Role:**
-    Identify revenue leaks and opportunities for growth using the "Inkroast Method" (Brand + SEO + Tech).
+    Identify revenue leaks and sales opportunities for growth using the "Inkroast Method" (Brand + SEO + Tech).
     
     Return ONLY a valid raw JSON object with this exact structure:
     {{
