@@ -21,7 +21,7 @@ st.markdown("""
 <style>
     /* Report Container */
     .report-container {
-        background-color: #ffffff;
+        background-color: #000000;
         padding: 40px;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
