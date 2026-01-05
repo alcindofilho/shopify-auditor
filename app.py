@@ -18,11 +18,8 @@ BOOKING_LINK = "https://portal.inkroast.com/discovery"
 # Map the exact app name (as the AI sees it) to your specific affiliate URL
 APP_LINKS = {
     "Plug In SEO": "https://pluginseo.com?ref=YOUR_REF_ID",
-    "Klaviyo": "https://klaviyo.com/partner/YOUR_REF_ID",
+    "Shopify Email Marketing": "https://shopify.pxf.io/POeZJj",
     "Judge.me": "https://judge.me/ref/YOUR_REF_ID",
-    "Loox": "https://loox.io/app/YOUR_REF_ID",
-    "Privy": "https://privy.com/ref/YOUR_REF_ID",
-    "ReConvert": "https://reconvert.io/?ref=YOUR_REF_ID"
 }
 
 # --- 2. CONFIGURATION & STYLING ---
