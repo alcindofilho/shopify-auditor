@@ -17,6 +17,7 @@ BOOKING_LINK = "https://portal.inkroast.com/discovery"
 # --- AFFILIATE LINKS DATABASE ---
 # Map the exact app name (as the AI sees it) to your specific affiliate URL
 APP_LINKS = {
+    "Shopify":"https://shopify.pxf.io/POeZJj",
     "Plug In SEO": "https://pluginseo.com?ref=YOUR_REF_ID",
     "Shopify Email Marketing": "https://shopify.pxf.io/POeZJj",
     "Judge.me": "https://judge.me/ref/YOUR_REF_ID",
