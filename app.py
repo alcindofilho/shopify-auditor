@@ -442,12 +442,18 @@ if st.button("Generate My Report 🚀", type="primary"):
                             
                             st.markdown("### Recommended Tech Stack")
                             for stack in audit['recommended_stack']:
+                                # Get the link we added in Step 2
+                                link = stack.get('link', '#')
+                                
                                 st.markdown(f"""
                                 <div class="service-box">
                                     <div style="font-size:12px; text-transform:uppercase; color:#666; font-weight:bold; margin-bottom:5px;">{stack['category']}</div>
                                     <div style="display:flex; justify-content:space-between; align-items:center;">
                                         <div>
-                                            <strong style="color:#333;">🛠 Tool:</strong> {stack['tool']}
+                                            <strong style="color:#333;">🛠 Tool:</strong> 
+                                            <a href="{link}" target="_blank" style="color:#008060; text-decoration:none; font-weight:bold;">
+                                                {stack['tool']} ↗
+                                            </a>
                                         </div>
                                         <div>
                                             <strong style="color:#008060;">🚀 Service:</strong> {stack['service']}
