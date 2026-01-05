@@ -15,7 +15,7 @@ AGENCY_URL = "https://www.inkroast.com"
 BOOKING_LINK = "https://portal.inkroast.com/discovery"
 
 # --- 2. CONFIGURATION & STYLING ---
-st.set_page_config(page_title=f"{AGENCY_NAME} Store Auditor", page_icon="☕", layout="centered")
+st.set_page_config(page_title=f"{AGENCY_NAME} Shopify Store Growth Snapshot", page_icon="☕", layout="centered")
 
 st.markdown("""
 <style>
@@ -153,7 +153,7 @@ def analyze_store_json(data):
     model = genai.GenerativeModel('models/gemini-2.5-flash')
     
     prompt = f"""
-    You are a Senior Strategist at {AGENCY_NAME}.
+    You are a Senior Strategist at {AGENCY_NAME} specialized in the coffee industry.
     
     Analyze this store data:
     - URL: {data['url']}
@@ -324,11 +324,11 @@ def create_word_doc(audit, url):
 
 # --- 5. THE UI LAYOUT ---
 
-st.title(f"☕ {AGENCY_NAME} Store Analyst")
+st.title(f"☕ {AGENCY_NAME} Shopify Store Growth Snapshot App")
 st.markdown("### Complimentary Brand & SEO Audit")
-st.markdown("Enter your Shopify URL. Our AI Agent will analyze your brand using the **Inkroast 6-Point Framework**.")
+st.markdown("Enter your Shopify Store URL. Our Agent APP will analyze your brand using the **Inkroast 6-Point Framework**.")
 
-url_input = st.text_input("Store URL", placeholder="yourstore.com", label_visibility="collapsed")
+url_input = st.text_input("Store URL", placeholder="yourshopifystore.com", label_visibility="collapsed")
 
 if st.button("Generate My Report 🚀", type="primary"):
     if not url_input:
