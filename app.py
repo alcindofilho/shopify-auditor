@@ -15,7 +15,7 @@ AGENCY_URL = "https://www.inkroast.com"
 BOOKING_LINK = "https://portal.inkroast.com/discovery"
 
 # --- 2. CONFIGURATION & STYLING ---
-st.set_page_config(page_title=f"{AGENCY_NAME} Shopify Store Growth Snapshot", page_icon="☕", layout="centered")
+st.set_page_config(page_title=f"{AGENCY_NAME} Shopify e-commerce Snapshot", page_icon="☕", layout="centered")
 
 st.markdown("""
 <style>
@@ -324,7 +324,7 @@ def create_word_doc(audit, url):
 
 # --- 5. THE UI LAYOUT ---
 
-st.title(f"☕ {AGENCY_NAME} Shopify Store Growth Snapshot App")
+st.title(f"☕ {AGENCY_NAME} Shopify e-commerce Snapshot")
 st.markdown("### Complimentary Brand & SEO Audit")
 st.markdown("Enter your Shopify Store URL. Our Agent APP will analyze your brand using the **Inkroast 6-Point Framework**.")
 
