@@ -32,6 +32,14 @@ st.markdown("""
     /* Typography */
     h1 { color: #1a1a1a; font-family: 'Arial', sans-serif; font-weight: 800; }
     h2 { color: #2c3e50; font-family: 'Arial', sans-serif; font-weight: 600; }
+
+    /* --- INPUT FIELD SHADOW --- */
+    /* This targets the actual input box inside Streamlit's wrapper */
+    div[data-baseweb="input"] > div {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 6px !important;
+    }
     
     /* "Generate Report" Button - INKROAST GREEN */
     .stButton>button { 
