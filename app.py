@@ -14,6 +14,17 @@ AGENCY_NAME = "Inkroast"
 AGENCY_URL = "https://www.inkroast.com"
 BOOKING_LINK = "https://portal.inkroast.com/discovery"
 
+# --- AFFILIATE LINKS DATABASE ---
+# Map the exact app name (as the AI sees it) to your specific affiliate URL
+APP_LINKS = {
+    "Plug In SEO": "https://pluginseo.com?ref=YOUR_REF_ID",
+    "Klaviyo": "https://klaviyo.com/partner/YOUR_REF_ID",
+    "Judge.me": "https://judge.me/ref/YOUR_REF_ID",
+    "Loox": "https://loox.io/app/YOUR_REF_ID",
+    "Privy": "https://privy.com/ref/YOUR_REF_ID",
+    "ReConvert": "https://reconvert.io/?ref=YOUR_REF_ID"
+}
+
 # --- 2. CONFIGURATION & STYLING ---
 st.set_page_config(page_title=f"{AGENCY_NAME} Shopify e-commerce Snapshot", page_icon="☕", layout="centered")
 
@@ -245,9 +256,28 @@ def analyze_store_json(data):
     try:
         response = model.generate_content(prompt)
         clean_json = response.text.strip().replace('```json', '').replace('```', '')
-        return json.loads(clean_json)
+        audit_data = json.loads(clean_json)
+        
+        # --- NEW LOGIC: INJECT AFFILIATE LINKS ---
+        # This loops through the 'recommended_stack' and adds a 'link' field
+        if "recommended_stack" in audit_data:
+            for item in audit_data['recommended_stack']:
+                app_name = item.get('tool', '')
+                # Default to Shopify App Store search if you don't have a specific link
+                default_link = f"https://apps.shopify.com/search?q={app_name.replace(' ', '%20')}"
+                
+                # Check our dictionary for a match
+                # We use a partial match check (e.g. if AI says "Klaviyo Email", it matches "Klaviyo")
+                item['link'] = default_link # Start with default
+                for key, affiliate_url in APP_LINKS.items():
+                    if key.lower() in app_name.lower():
+                        item['link'] = affiliate_url
+                        break
+        
+        return audit_data
     except Exception as e:
         return {"error": str(e)}
+
 
 def create_word_doc(audit, url):
     """Generates a formatted .docx file with the 6-point structure."""
